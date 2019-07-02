@@ -5,7 +5,10 @@ import { Request, Response } from "express";
  * Home page.
  */
 export const index = (req: Request, res: Response) => {
+  res.send({status: "Success"});
+  /*
   res.render("home", {
     title: "Home"
   });
+  */
 };

@@ -5,6 +5,6 @@ type Place = {
         long: Number
     };
     population: Number;
-}
+};
 
 let data: Place = undefined;
