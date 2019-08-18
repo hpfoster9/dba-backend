@@ -14,7 +14,7 @@ const server2 = require("http").Server(app);
 const io = require("socket.io")(server2);
 const server = server2.listen(app.get("port"), () => {
   console.log(
-    "beep boop App is running at http://localhost:%d in %s mode",
+    "beef beep boop App is running at http://localhost:%d in %s mode",
     app.get("port"),
     app.get("env")
   );
