@@ -4,13 +4,10 @@ import mongoose from "mongoose";
 export interface UserDocument extends mongoose.Document {
   id: string;
   email: string;
-  name: {
-    fname: string,
-    lname: string
-  };
+  name: string;
   location: {
-    lat: number,
-    long: number
+    latitude: number,
+    longitude: number
   };
   seller: boolean;
   pendingBuyerTransaction: string;
@@ -24,14 +21,11 @@ export interface UserDocument extends mongoose.Document {
 
 const userSchema = new mongoose.Schema({
   id: { type: String, unique: true },
-  email: { type: String, unique: true },
-  name: {
-    fname: String,
-    lname: String
-  },
+  email: String,
+  name: String,
   location: {
-    lat: Number,
-    long: Number
+    latitude: Number,
+    longitude: Number
   },
   seller: Boolean,
   pendingBuyerTransaction: String,

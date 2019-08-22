@@ -8,7 +8,9 @@ import { IVerifyOptions } from "passport-local";
 import { WriteError } from "mongodb";
 import request from "express-validator";
 import "../config/passport";
-
+import { User } from "../models/User";
+import { UserDocument } from "../models/User";
+import { getDistance } from "geolib";
 
 
 /**
@@ -16,12 +18,13 @@ import "../config/passport";
  * get list of sellers
  */
 export const createExchange = (req: Request, res: Response) => {
-  const { name, loc, radius, sellers } = req.body;
+  const { name, location, radius, people } = req.body;
+  console.log(location);
   const exchange = new Exchange({
     name: name,
-    loc: loc,
+    location: location,
     radius: radius,
-    sellers: sellers
+    people: people
   });
   exchange.save((err, ex) => {
     console.log(err);
@@ -34,14 +37,55 @@ export const createExchange = (req: Request, res: Response) => {
 export const sellerList = (req: Request, res: Response) => {
   console.log("sellerList");
   Exchange.findOne({ name: req.body.name }, (err: any, exchange: ExchangeDocument) => {
-    if (err) {
+    if (err || !exchange) {
       res.send({ status: "exchange not found" });
     }
     else {
-      res.send({ status: "success", sellers: exchange.sellers });
+      let sellers;
+      User.find({ id: { $in: exchange.people } }, (err, uArray) => {
+        sellers = uArray.filter((u) => { return u.seller; });
+        res.send({ status: "success", sellers: sellers });
+      });
+    }
+});
+};
+
+const insideExchange = (user_loc: any, ex: any) => {
+  // geo distance: https://stackoverflow.com/questions/24680247/check-if-a-latitude-and-longitude-is-within-a-circle-google-maps
+  const { radius, location } = ex;
+  console.log(getDistance(location, user_loc));
+  return getDistance(location, user_loc) <= radius;
+};
+
+export const updateExchanges = (id: string, user_loc: any) => {
+  Exchange.find({}, (err, eArray) => {
+    if (err || eArray.length === 0) {
+      console.log(err);
+    }
+    else {
+      eArray.forEach(ex => {
+        console.log(ex);
+        console.log(user_loc);
+        console.log("****");
+        const inRadius = insideExchange(user_loc, ex);
+        const inList = ex.people.includes(id);
+        if (inRadius && !inList) {
+          console.log(`inside ${ex.name}`);
+          ex.people.push(id);
+          ex.save();
+        }
+        else if (!inRadius && inList) {
+          ex.people.splice(ex.people.indexOf(id));
+          ex.save();
+        }
+      });
     }
   });
 };
+
+
+
+
 
 export const clearExchanges = (req: Request, res: Response, next: NextFunction) => {
   Exchange.deleteMany({}, (err) => { console.log(err); });

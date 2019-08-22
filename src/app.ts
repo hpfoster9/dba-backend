@@ -43,7 +43,7 @@ mongoose.connect(mongoUrl, { useNewUrlParser: true, useCreateIndex: true }).then
 });
 
 // Express configuration
-app.set("port", process.env.PORT || 3000);
+app.set("port", process.env.PORT || 1408);
 app.set("views", path.join(__dirname, "../views"));
 app.set("view engine", "pug");
 app.use(compression());
@@ -80,6 +80,7 @@ app.use(
  */
 app.get("/", homeController.index);
 app.post("/signup", userController.postSignup);
+app.post("/login", userController.tryLogin);
 app.put("/updateLoc", userController.updateLoc);
 app.get("/sellerList", exchangeController.sellerList);
 app.post("/updateSeller", userController.updateSeller);

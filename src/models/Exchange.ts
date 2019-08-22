@@ -2,23 +2,23 @@ import mongoose from "mongoose";
 
 export interface ExchangeDocument extends mongoose.Document {
   name: string;
-  loc: {
-    lat: number,
-    long: number
+  location: {
+    latitude: number,
+    longitude: number
   };
   radius: number;
-  sellers: [string];
+  people: [string];
   joinExchange: () => void;
 }
 
 const exchangeSchema = new mongoose.Schema({
   name: String,
-  loc: {
-    lat: Number,
-    long: Number
+  location: {
+    latitude: Number,
+    longitude: Number
   },
   radius: Number,
-  sellers: [String],
+  people: [String],
 }, { timestamps: true });
 
 /**

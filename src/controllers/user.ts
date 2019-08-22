@@ -8,7 +8,7 @@ import { IVerifyOptions } from "passport-local";
 import { WriteError } from "mongodb";
 import request from "express-validator";
 import "../config/passport";
-
+import * as exchangeController from "./exchange";
 
 /**
  * POST /signup
@@ -22,7 +22,7 @@ export const postSignup = (req: Request, res: Response) => {
     email: email,
     name: name,
     location: location,
-    seller: seller,
+    seller: seller ? seller : false,
     pendingBuyerTransaction: pendingBuyerTransaction,
     pendingSellertransaction: pendingSellertransaction,
     sellerSettings: sellerSettings,
@@ -42,19 +42,31 @@ export const postSignup = (req: Request, res: Response) => {
     }
   });
 };
-
+export const tryLogin = (req: Request, res: Response) => {
+  console.log(req);
+  console.log(req.body);
+  console.log(req.body.id);
+  User.findOne({ id: req.body.id }, (err, u) => {
+    if (err || !u) {
+      res.send({ status: err ? err : "User not found" });
+    }
+    else {
+      res.send({ status: "success" });
+    }
+  });
+};
 /**
  * POST /updateLoc
  * update the location
  */
 export const updateLoc = (req: Request, res: Response) => {
   console.log("updateLoc");
-  const { id, email, location } = req.body;
+  const { id, location } = req.body;
   // console.log(id);
   // console.log(location);
-  User.findOneAndUpdate({ email: email }, { location: location }, (err, u) => {
-    // console.log(err);
-    // console.log(u);
+  User.findOneAndUpdate({ id: id }, { location: location }, (err, u) => {
+    console.log(location);
+    exchangeController.updateExchanges(u.id, location);
     res.send({
       status: "success",
     });
