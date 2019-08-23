@@ -14,68 +14,78 @@ import { getDistance } from "geolib";
 
 
 /**
- * GET /sellerList
- * get list of sellers
+ * POST /createExchange
+ * Initialize exchange
  */
 export const createExchange = (req: Request, res: Response) => {
   const { name, location, radius, people } = req.body;
-  console.log(location);
   const exchange = new Exchange({
     name: name,
     location: location,
     radius: radius,
     people: people
   });
-  exchange.save((err, ex) => {
-    console.log(err);
-    console.log(ex);
-    res.send({ status: "success" });
+
+  exchange.save((err) => {
+    if (err) {
+      res.send({ status: err });
+    }
+    else {
+      res.send({ status: "success" });
+    }
   });
 };
 
-
+/**
+ * PUT /sellerList
+ * Get list of sellers within exchange
+ */
 export const sellerList = (req: Request, res: Response) => {
-  console.log("sellerList");
   Exchange.findOne({ name: req.body.name }, (err: any, exchange: ExchangeDocument) => {
     if (err || !exchange) {
-      res.send({ status: "exchange not found" });
+      res.send({ status: err ? err : "exchange not found" });
     }
     else {
-      let sellers;
       User.find({ id: { $in: exchange.people } }, (err, uArray) => {
-        sellers = uArray.filter((u) => { return u.seller; });
-        res.send({ status: "success", sellers: sellers });
+        if (err) {
+          res.send({ status: err });
+        }
+        else {
+          const sellers = uArray.filter((u) => {
+            return u.seller;
+          }).map((user) => {
+            return {
+              name: user.name,
+              id: user.id,
+              discount: user.sellerSettings.discount
+            };
+          });
+          res.send({ status: "success", sellers: sellers });
+        }
       });
     }
-});
+  });
 };
 
-const insideExchange = (user_loc: any, ex: any) => {
-  // geo distance: https://stackoverflow.com/questions/24680247/check-if-a-latitude-and-longitude-is-within-a-circle-google-maps
-  const { radius, location } = ex;
-  console.log(getDistance(location, user_loc));
-  return getDistance(location, user_loc) <= radius;
-};
-
-export const updateExchanges = (id: string, user_loc: any) => {
+/**
+ * Update exchanges based on new locations
+ */
+export const updateExchanges = (id: string, user_loc: any, res: Response) => {
   Exchange.find({}, (err, eArray) => {
-    if (err || eArray.length === 0) {
-      console.log(err);
+    if (err) {
+      res.send({ status: err });
     }
     else {
       eArray.forEach(ex => {
-        console.log(ex);
-        console.log(user_loc);
-        console.log("****");
-        const inRadius = insideExchange(user_loc, ex);
+        const inRadius = (getDistance(user_loc, ex.location) <= ex.radius);
         const inList = ex.people.includes(id);
+
         if (inRadius && !inList) {
-          console.log(`inside ${ex.name}`);
           ex.people.push(id);
           ex.save();
         }
         else if (!inRadius && inList) {
-          ex.people.splice(ex.people.indexOf(id));
+          ex.people.splice(ex.people.indexOf(id), 1);
           ex.save();
         }
       });
@@ -84,17 +94,22 @@ export const updateExchanges = (id: string, user_loc: any) => {
 };
 
 
-
-
-
-export const clearExchanges = (req: Request, res: Response, next: NextFunction) => {
-  Exchange.deleteMany({}, (err) => { console.log(err); });
-  res.send({ status: "success" });
+/**
+ * PUT /clearExchanges
+ * Clears the DB of Users
+ */
+export const clearExchanges = (req: Request, res: Response) => {
+  Exchange.deleteMany({}, (err) => {
+    res.send({ status: err ? err : "success" });
+  });
 };
 
-export const printExchanges = (req: Request, res: Response, next: NextFunction) => {
+/**
+ * PUT /getExchanges
+ * Returns all Exchange in DB
+ */
+export const getExchanges = (req: Request, res: Response) => {
   Exchange.find({}, (err, result) => {
-    console.log(err);
-    res.send({ status: "success", res: result });
+    res.send({ status: err ? err : "success", res: result });
   });
 };

@@ -82,20 +82,21 @@ app.get("/", homeController.index);
 app.post("/signup", userController.postSignup);
 app.post("/login", userController.tryLogin);
 app.put("/updateLoc", userController.updateLoc);
-app.get("/sellerList", exchangeController.sellerList);
+app.put("/sellerList", exchangeController.sellerList);
 app.post("/updateSeller", userController.updateSeller);
 app.post("/connectBuyer", transactionController.connectBuyer);
 app.post("/respondSeller", transactionController.respondSeller);
-app.get("/checkSellerTrans", transactionController.checkSellerTrans);
-app.get("/checkBuyerTrans", transactionController.checkBuyerTrans);
-// app.post("/rateTransaction");
+app.put("/checkSellerTrans", transactionController.checkSellerTrans);
+app.put("/checkBuyerTrans", transactionController.checkBuyerTrans);
+
+// Helpful debugging routes
 app.post("/createExchange", exchangeController.createExchange);
 
 app.put("/clearUsers", userController.clearUsers);
 app.put("/clearExchanges", exchangeController.clearExchanges);
 app.put("/clearTransactions", transactionController.clearTransactions);
 
-app.get("/printUsers", userController.printUsers);
-app.get("/printExchanges", exchangeController.printExchanges);
-app.get("/printTransactions", transactionController.printTransactions);
+app.get("/getUsers", userController.getUsers);
+app.get("/getExchanges", exchangeController.getExchanges);
+app.get("/getTransactions", transactionController.getTransactions);
 export default app;

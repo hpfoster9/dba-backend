@@ -13,7 +13,6 @@ export interface TransactionDocument extends mongoose.Document {
   };
   exchange: string;
   status: number;
-  joinExchange: () => void;
 }
 
 const transactionSchema = new mongoose.Schema({
@@ -29,12 +28,5 @@ const transactionSchema = new mongoose.Schema({
   exchange: String,
   status: Number
 }, { timestamps: true });
-
-/**
- * Helper method for getting user's gravatar.
- */
-transactionSchema.methods.joinExchange = function (id: number) {
-  console.log("add id to people");
-};
 
 export const Transaction = mongoose.model<TransactionDocument>("Transaction", transactionSchema);

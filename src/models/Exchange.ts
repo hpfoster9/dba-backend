@@ -8,7 +8,6 @@ export interface ExchangeDocument extends mongoose.Document {
   };
   radius: number;
   people: [string];
-  joinExchange: () => void;
 }
 
 const exchangeSchema = new mongoose.Schema({
@@ -20,12 +19,5 @@ const exchangeSchema = new mongoose.Schema({
   radius: Number,
   people: [String],
 }, { timestamps: true });
-
-/**
- * Helper method for getting user's gravatar.
- */
-exchangeSchema.methods.joinExchange = function (id: number) {
-  console.log("add id to people");
-};
 
 export const Exchange = mongoose.model<ExchangeDocument>("Exchange", exchangeSchema);

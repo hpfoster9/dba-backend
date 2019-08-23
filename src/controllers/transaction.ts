@@ -14,11 +14,10 @@ import "../config/passport";
 
 
 /**
- * post /connectbuyer
- * buyer pings seller
+ * POST /connectBuyer
+ * Buyer initiates request to seller
  */
 export const connectBuyer = (req: Request, res: Response) => {
-  console.log("connectBuyer");
   const { bId, sId, exchange } = req.body;
   const transaction = new Transaction({
     date: Date.now(),
@@ -33,71 +32,77 @@ export const connectBuyer = (req: Request, res: Response) => {
     exchange: exchange,
     status: 0
   });
+
   User.findOne({ id: sId }, (err, seller: UserDocument) => {
-    if (err) {
-      console.log(err);
+    if (err || !seller) {
+      res.send({ status: err ? err : "seller not found" });
+    }
+    else if (seller.pendingSellerTransaction) {
+      res.send({ status: "seller already has transaction" });
     }
     else {
-      console.log(seller);
-    }
-    if (seller.pendingSellerTransaction) {
-      res.send({ status: "seller already has transaction" });
-      return;
-    }
-    transaction.save((err) => {
-      if (err) {
-        console.log(err);
-        res.send("save error");
-      }
-      User.findOneAndUpdate({ id: bId }, { pendingBuyerTransaction: transaction._id }, (err, doc, result) => {
-        console.log("in buyer");
+      transaction.save((err) => {
         if (err) {
-          console.log(err);
+          res.send({ status: "save error" });
         }
-        console.log(doc);
-        console.log(result);
-        seller.updateOne({ pendingSellerTransaction: transaction._id }, (err, raw) => {
-          console.log("in seller");
-          if (err) {
-            console.log(err);
-          }
-          console.log(raw);
-          res.send({ status: "success" });
-        });
-
+        else {
+          User.findOneAndUpdate({ id: bId }, { pendingBuyerTransaction: transaction._id }, (err, buyer) => {
+            if (err || !buyer) {
+              res.send({ status: err ? err : "buyer not found" });
+            }
+            else {
+              seller.updateOne({ pendingSellerTransaction: transaction._id }, (err) => {
+                if (err) {
+                  res.send({ status: err });
+                }
+                else {
+                  res.send({ status: "success" });
+                }
+              });
+            }
+          });
+        }
       });
-    });
+    }
   });
-  // maybe findOne to get the seller and notify them of a pending transaction
 };
+
 /**
- * post /respondSeller
- * buyer pings seller
+ * POST /respondSeller
+ * Seller responds to buyers request
  */
-export const respondSeller = (req: Request, res: Response, next: NextFunction) => {
-  console.log("respondSeller");
-  // maybe findOne to get the seller and notify them of a pending transaction
+export const respondSeller = (req: Request, res: Response) => {
   const { sId, bId, accept } = req.body;
-  User.findOne({ id: sId }, (err, prod) => {
-    console.log(err);
-    console.log(prod);
-    if (prod.pendingSellerTransaction) {
+  User.findOne({ id: sId }, (err, seller) => {
+    if (err || !seller) {
+      res.send({ status: err ? err : "seller not found" });
+    }
+    else if (seller.pendingSellerTransaction) {
       if (accept) {
-        Transaction.findOneAndUpdate({ _id: prod.pendingSellerTransaction }, { seller: { id: sId, accepted: true } }, (err, trans) => {
-          console.log(err);
-          console.log(trans);
-          res.send({ status: "accepted pending request" });
+        Transaction.findOneAndUpdate({ _id: seller.pendingSellerTransaction }, { seller: { id: sId, accepted: true } }, (err, trans) => {
+          if (err || !trans) {
+            res.send({ status: err ? err : "transaction not found" });
+          }
+          else {
+            res.send({ status: "accepted pending request" });
+          }
         });
       }
       else {
-        User.findOneAndUpdate({ id: sId }, { pendingSellerTransaction: undefined }, (err, seller) => {
-          console.log(err);
-          console.log(seller);
-          User.findOneAndUpdate({ id: bId }, { pendingBuyerTransaction: undefined }, (err, buyer) => {
-            console.log(err);
-            console.log(buyer);
-            res.send({ status: "denied pending request" });
-          });
+        seller.updateOne({ pendingSellerTransaction: undefined }, (err) => {
+          if (err) {
+            res.send({ status: err });
+          }
+          else {
+            User.findOneAndUpdate({ id: bId }, { pendingBuyerTransaction: undefined }, (err, buyer) => {
+              if (err || !buyer) {
+                res.send({ status: err ? err : "buyer not found" });
+              }
+              else {
+                res.send({ status: "denied pending request" });
+              }
+            });
+          }
         });
       }
     }
@@ -107,13 +112,11 @@ export const respondSeller = (req: Request, res: Response, next: NextFunction) =
   });
 };
 
-export const checkSellerTrans = (req: Request, res: Response, next: NextFunction) => {
-  console.log("checkSellerTrans");
-  // maybe findOne to get the seller and notify them of a pending transaction
+export const checkSellerTrans = (req: Request, res: Response) => {
   User.findOne({ id: req.body.id }, (err, prod) => {
     if (prod.pendingSellerTransaction) {
       Transaction.findOne({ _id: prod.pendingSellerTransaction }, (err, trans) => {
-        res.send({ status: "pendi   ng seller transaction" });
+        res.send({ status: "pending seller transaction" });
       });
     }
     else {
@@ -122,33 +125,50 @@ export const checkSellerTrans = (req: Request, res: Response, next: NextFunction
   });
 };
 
-export const checkBuyerTrans = (req: Request, res: Response, next: NextFunction) => {
-  console.log("checkBuyerTrans");
-  // maybe findOne to get the seller and notify them of a pending transaction
-  User.findOne({ id: req.body.id }, (err, prod) => {
-    if (prod.pendingBuyerTransaction) {
-      Transaction.findOne({ _id: prod.pendingBuyerTransaction }, (err, trans) => {
-        if (trans.seller.accepted) {
-          res.send({ status: "seller accepted" });
+/**
+ * POST /checkBuyerTrans
+ * Buyer pings server to check for request updates
+ */
+export const checkBuyerTrans = (req: Request, res: Response) => {
+  User.findOne({ id: req.body.id }, (err, buyer) => {
+    if (err || !buyer) {
+      res.send({ accepted: false, status: err ? err : "buyer not found" });
+    }
+    else if (buyer.pendingBuyerTransaction) {
+      Transaction.findOne({ _id: buyer.pendingBuyerTransaction }, (err, trans) => {
+        if (err || !trans) {
+          res.send({ accepted: false, status: err ? err : "transaction not found" });
+        }
+        else if (trans.seller.accepted) {
+          res.send({ accepted: true, status: "seller accepted" });
         }
         else {
-          res.send({ status: "seller yet to accept" });
+          res.send({ accepted: false, status: "seller yet to accept" });
         }
       });
     }
     else {
-      res.send({ status: "no requests pending" });
+      res.send({ accepted: false, status: "no requests pending" });
     }
   });
 };
 
-export const clearTransactions = (req: Request, res: Response, next: NextFunction) => {
-  Transaction.deleteMany({}, (err) => { console.log(err); });
+/**
+ * PUT /clearTransactions
+ * Clears the DB of Transactions
+ */
+export const clearTransactions = (req: Request, res: Response) => {
+  Transaction.deleteMany({}, (err) => {
+    res.send({ status: err ? err : "success" });
+  });
 };
 
-export const printTransactions = (req: Request, res: Response, next: NextFunction) => {
+/**
+ * PUT /getTransactions
+ * Returns all Transactions in DB
+ */
+export const getTransactions = (req: Request, res: Response) => {
   Transaction.find({}, (err, result) => {
-    console.log(err);
-    res.send({ status: "success", res: result });
+    res.send({ status: err ? err : "success", res: result });
   });
 };

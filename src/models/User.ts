@@ -16,7 +16,6 @@ export interface UserDocument extends mongoose.Document {
     amountToSell: number,
     discount: number
   };
-  joinExchange: () => void;
 }
 
 const userSchema = new mongoose.Schema({
@@ -35,12 +34,5 @@ const userSchema = new mongoose.Schema({
     discount: Number
   }
 }, { timestamps: true });
-
-/**
- * Helper method for getting user's gravatar.
- */
-userSchema.methods.joinExchange = function () {
-  console.log("joined exchange");
-};
 
 export const User = mongoose.model<UserDocument>("User", userSchema);
