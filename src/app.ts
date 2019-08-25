@@ -78,16 +78,15 @@ app.use(
 /**
  * Primary app routes.
  */
-app.get("/", homeController.index);
-app.post("/signup", userController.postSignup);
-app.post("/login", userController.tryLogin);
-app.put("/updateLoc", userController.updateLoc);
-app.put("/sellerList", exchangeController.sellerList);
-app.post("/updateSeller", userController.updateSeller);
-app.post("/connectBuyer", transactionController.connectBuyer);
-app.post("/respondSeller", transactionController.respondSeller);
-app.put("/checkSellerTrans", transactionController.checkSellerTrans);
-app.put("/checkBuyerTrans", transactionController.checkBuyerTrans);
+app.post("/User", userController.postSignup);
+app.get("/User", userController.tryLogin);
+app.put("/User", userController.updateSeller);
+app.put("/UserLoc", userController.updateLoc);
+app.get("/Sellers", exchangeController.sellerList);
+app.put("/BuyerTrans", transactionController.connectBuyer);
+app.get("/BuyerTrans", transactionController.checkBuyerTrans);
+app.put("/SellerTrans", transactionController.respondSeller);
+app.get("/SellerTrans", transactionController.checkSellerTrans);
 
 // Helpful debugging routes
 app.post("/createExchange", exchangeController.createExchange);

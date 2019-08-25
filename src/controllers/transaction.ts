@@ -113,7 +113,7 @@ export const respondSeller = (req: Request, res: Response) => {
 };
 
 export const checkSellerTrans = (req: Request, res: Response) => {
-  User.findOne({ id: req.body.id }, (err, prod) => {
+  User.findOne({ id: req.query.id }, (err, prod) => {
     if (prod.pendingSellerTransaction) {
       Transaction.findOne({ _id: prod.pendingSellerTransaction }, (err, trans) => {
         res.send({ status: "pending seller transaction" });
@@ -130,7 +130,7 @@ export const checkSellerTrans = (req: Request, res: Response) => {
  * Buyer pings server to check for request updates
  */
 export const checkBuyerTrans = (req: Request, res: Response) => {
-  User.findOne({ id: req.body.id }, (err, buyer) => {
+  User.findOne({ id: req.query.id }, (err, buyer) => {
     if (err || !buyer) {
       res.send({ accepted: false, status: err ? err : "buyer not found" });
     }

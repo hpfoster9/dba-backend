@@ -23,7 +23,7 @@ export const createExchange = (req: Request, res: Response) => {
     name: name,
     location: location,
     radius: radius,
-    people: people
+    people: people ? people : []
   });
 
   exchange.save((err) => {
@@ -41,7 +41,7 @@ export const createExchange = (req: Request, res: Response) => {
  * Get list of sellers within exchange
  */
 export const sellerList = (req: Request, res: Response) => {
-  Exchange.findOne({ name: req.body.name }, (err: any, exchange: ExchangeDocument) => {
+  Exchange.findOne({ name: req.query.name }, (err: any, exchange: ExchangeDocument) => {
     if (err || !exchange) {
       res.send({ status: err ? err : "exchange not found" });
     }

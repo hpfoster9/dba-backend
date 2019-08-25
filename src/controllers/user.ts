@@ -49,7 +49,7 @@ export const postSignup = (req: Request, res: Response) => {
  * Checks to see if id is valid
  */
 export const tryLogin = (req: Request, res: Response) => {
-  User.findOne({ id: req.body.id }, (err, u) => {
+  User.findOne({ id: req.query.id }, (err, u) => {
     if (err || !u) {
       res.send({ status: err ? err : "User not found" });
     }
