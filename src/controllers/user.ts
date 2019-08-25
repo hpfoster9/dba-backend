@@ -12,10 +12,9 @@ import * as exchangeController from "./exchange";
 
 /**
  * POST /signup
- * Create a new local account.
+ * Create a new user account
  */
 export const postSignup = (req: Request, res: Response) => {
-  console.log("postSignup");
   const { id, email, name, location, seller, pendingBuyerTransaction, pendingSellertransaction, sellerSettings } = req.body;
   const user = new User({
     id: id,
@@ -27,26 +26,30 @@ export const postSignup = (req: Request, res: Response) => {
     pendingSellertransaction: pendingSellertransaction,
     sellerSettings: sellerSettings,
   });
-  console.log("user");
-  console.log(user);
+
   User.findOne({ id: id }, (err, existingUser) => {
     if (existingUser) {
-      console.log(existingUser);
       res.send({ success: false, msg: "user exists" });
     }
     else {
       user.save((err) => {
-        console.log(err);
-        res.send({ status: "success" });
+        if (err) {
+          res.send({ success: false, msg: "save error" });
+        }
+        else {
+          res.send({ status: "success" });
+        }
       });
     }
   });
 };
+
+/**
+ * POST /login
+ * Checks to see if id is valid
+ */
 export const tryLogin = (req: Request, res: Response) => {
-  console.log(req);
-  console.log(req.body);
-  console.log(req.body.id);
-  User.findOne({ id: req.body.id }, (err, u) => {
+  User.findOne({ id: req.query.id }, (err, u) => {
     if (err || !u) {
       res.send({ status: err ? err : "User not found" });
     }
@@ -55,64 +58,62 @@ export const tryLogin = (req: Request, res: Response) => {
     }
   });
 };
+
 /**
  * POST /updateLoc
- * update the location
+ * updates the location of a user and update the exchanges
  */
 export const updateLoc = (req: Request, res: Response) => {
-  console.log("updateLoc");
   const { id, location } = req.body;
-  // console.log(id);
-  // console.log(location);
+
   User.findOneAndUpdate({ id: id }, { location: location }, (err, u) => {
-    console.log(location);
-    exchangeController.updateExchanges(u.id, location);
-    res.send({
-      status: "success",
-    });
+    exchangeController.updateExchanges(u.id, location, res);
+    if (err || !u) {
+      res.send({ status: err ? err : "User not found" });
+    }
+    else {
+      res.send({
+        status: "success",
+      });
+    }
   });
 };
 
 /**
- * POST /updateLoc
- * update the location
+ * POST /updateSeller
+ * update the seller section of user account
  */
 export const updateSeller = (req: Request, res: Response) => {
-  console.log("updateSeller");
   const { id, sellerSettings, seller } = req.body;
-  console.log(id);
+
   User.findOneAndUpdate({ id: id }, { seller: seller, sellerSettings: seller ? sellerSettings : undefined }, (err, u) => {
-    console.log(u);
-    res.send({
-      status: err ? "user couldn't be found" : "success"
-    });
+    if (err || !u) {
+      res.send({ status: err ? err : "User not found" });
+    }
+    else {
+      res.send({
+        status: "success"
+      });
+    }
   });
 };
 
-// Redundant?
-export const checkSellerTrans = (req: Request, res: Response, next: NextFunction) => {
-  console.log("checkSellerTrans");
-  // maybe findOne to get the seller and notify them of a pending transaction
-  const { id, amountToSell, discount, seller } = req.body.id;
-  const newSettings = {
-    amountToSell,
-    discount
-  };
-  User.findOneAndUpdate({ id: id }, { seller: seller, sellerSettings: seller ? newSettings : undefined }, (err) => {
-    res.send({
-      status: err ? "user couldn't be found" : "success"
-    });
+/**
+ * PUT /clearUsers
+ * Clears the DB of Users
+ */
+export const clearUsers = (req: Request, res: Response) => {
+  User.deleteMany({}, (err) => {
+    res.send({ status: err ? err : "success" });
   });
 };
 
-export const clearUsers = (req: Request, res: Response, next: NextFunction) => {
-  User.deleteMany({}, (err) => { console.log(err); });
-  res.send({ status: "success" });
-};
-
-export const printUsers = (req: Request, res: Response, next: NextFunction) => {
+/**
+ * PUT /getUsers
+ * Returns all Users in DB
+ */
+export const getUsers = (req: Request, res: Response) => {
   User.find({}, (err, result) => {
-    console.log(err);
-    res.send({ status: "success", res: result });
+    res.send({ status: err ? err : "success", res: result });
   });
 };
